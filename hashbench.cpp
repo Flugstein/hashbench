@@ -11,8 +11,6 @@
 #include <cryptopp/sha3.h>
 #include <cryptopp/blake2.h>
 
-#define CPU_FREQ 2.7 * 1000 * 1000 * 1000
-
 /**
  * Read file into byte array
  * @param filename
@@ -39,7 +37,8 @@ size_t readFileIntoArray(std::string filename, CryptoPP::byte* &data) {
  * Measure speed of hash functions
  * @param hash Hash function to apply
  * @param data Pointer to input data array
- * @param runTimeInSeconds Approximate runtime of function (defines accuracy of benchmark)
+ * @param runTimeInSeconds Approximate runtime of function
+ *        (defines accuracy of benchmark, always calculates at least 10 hashes, even if that takes longer than runTimeInSeconds)
  * @return Time for one hash in seconds
  */
 double bench(CryptoPP::HashTransformation& hash, CryptoPP::byte* inputData, size_t inputDataSize, double runTimeInSeconds) {
@@ -47,12 +46,7 @@ double bench(CryptoPP::HashTransformation& hash, CryptoPP::byte* inputData, size
 
     const int numberOfRuns = 10;
     double timeForOneRun = runTimeInSeconds / numberOfRuns;
-    double timeOfRun[numberOfRuns];
-
-    // warm up
-    for (int i = 0; i < 1000; ++i) {
-        hash.CalculateDigest(digest, inputData, inputDataSize);
-    }
+    double timeForOneHash[numberOfRuns];
 
     for (int i = 0; i < numberOfRuns; i++) {
         CryptoPP::Timer timer;
@@ -66,7 +60,7 @@ double bench(CryptoPP::HashTransformation& hash, CryptoPP::byte* inputData, size
             elapsedTimeInSeconds = timer.ElapsedTimeAsDouble();
         } while (elapsedTimeInSeconds < timeForOneRun);
 
-        timeOfRun[i] = elapsedTimeInSeconds / numberOfHashes;
+        timeForOneHash[i] = elapsedTimeInSeconds / numberOfHashes;
     }
 
     /** DEBUG
@@ -76,8 +70,8 @@ double bench(CryptoPP::HashTransformation& hash, CryptoPP::byte* inputData, size
     **/
 
     // return median of all runs
-    std::sort(std::begin(timeOfRun), std::end(timeOfRun));
-    return timeOfRun[numberOfRuns / 2 - 1];
+    std::sort(std::begin(timeForOneHash), std::end(timeForOneHash));
+    return timeForOneHash[numberOfRuns / 2 - 1];
 }
 
 int main() {
@@ -99,12 +93,11 @@ int main() {
     CryptoPP::byte* fileData;
     size_t dataSizeInBytes = readFileIntoArray(filename, fileData);
 
-    std::cout << "CPU Freq: " << CPU_FREQ / 1000 / 1000 / 1000 << " GHz" << std::endl;
     std::cout << dataSizeInBytes << " bytes (B)" << std::endl;
     std::cout << std::endl;
 
     for (int i = 0; i < hashList.size(); i++) {
-        hashTime[i] = bench(*hashList[i], fileData, dataSizeInBytes, 3);
+        hashTime[i] = bench(*hashList[i], fileData, dataSizeInBytes, 2);
 
         std::cout << hashList[i]->AlgorithmName() << ":" << std::endl;
         std::cout << hashTime[i] * 1000 * 1000 << " µs per hash" << std::endl;
