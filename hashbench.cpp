@@ -44,21 +44,30 @@ size_t readFileIntoArray(std::string filename, CryptoPP::byte* &data) {
  */
 double bench(CryptoPP::HashTransformation& hash, CryptoPP::byte* inputData, size_t inputDataSize, double runTimeInSeconds) {
     CryptoPP::byte digest[hash.DigestSize()];
-    CryptoPP::Timer timer;
-    double elapsedTimeInSeconds;
-    long numberOfHashes = 0;
+
+    const int numberOfRuns = 10;
+    double timeForOneRun = runTimeInSeconds / numberOfRuns;
+    double timeOfRun[numberOfRuns];
 
     // warm up
     for (int i = 0; i < 1000; ++i) {
         hash.CalculateDigest(digest, inputData, inputDataSize);
     }
 
-    timer.StartTimer();
-    do {
-        hash.CalculateDigest(digest, inputData, inputDataSize);
-        numberOfHashes++;
-        elapsedTimeInSeconds = timer.ElapsedTimeAsDouble();
-    } while (elapsedTimeInSeconds < runTimeInSeconds);
+    for (int i = 0; i < numberOfRuns; i++) {
+        CryptoPP::Timer timer;
+        long numberOfHashes = 0;
+        double elapsedTimeInSeconds;
+
+        timer.StartTimer();
+        do {
+            hash.CalculateDigest(digest, inputData, inputDataSize);
+            numberOfHashes++;
+            elapsedTimeInSeconds = timer.ElapsedTimeAsDouble();
+        } while (elapsedTimeInSeconds < timeForOneRun);
+
+        timeOfRun[i] = elapsedTimeInSeconds / numberOfHashes;
+    }
 
     /** DEBUG
     std::string hexDigest;
@@ -66,7 +75,9 @@ double bench(CryptoPP::HashTransformation& hash, CryptoPP::byte* inputData, size
     std::cout << "Digest: " << hexDigest << std::endl;
     **/
 
-    return elapsedTimeInSeconds / numberOfHashes;
+    // return median of all runs
+    std::sort(std::begin(timeOfRun), std::end(timeOfRun));
+    return timeOfRun[numberOfRuns / 2 - 1];
 }
 
 int main() {
