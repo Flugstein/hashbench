@@ -37,31 +37,44 @@ size_t readFileIntoArray(std::string filename, CryptoPP::byte* &data) {
  * Measure speed of hash functions
  * @param hash Hash function to apply
  * @param data Pointer to input data array
- * @param runTimeInSeconds Approximate runtime of function
- *        (defines accuracy of benchmark, always calculates at least 10 hashes, even if that takes longer than runTimeInSeconds)
+ * @param runTimeInSeconds Approximate runtime of function (defines accuracy of benchmark)
  * @return Time for one hash in seconds
  */
 double bench(CryptoPP::HashTransformation& hash, CryptoPP::byte* inputData, size_t inputDataSize, double runTimeInSeconds) {
     CryptoPP::byte digest[hash.DigestSize()];
 
-    const int numberOfRuns = 10;
-    double timeForOneRun = runTimeInSeconds / numberOfRuns;
-    double timeForOneHash[numberOfRuns];
+    double totalTime = 0;
+    double currentHashTime = 0;
+    double bestHashTime = std::numeric_limits<double>::max();
+    const double minimumHashTime = (double) 100 / 1000 / 1000; // 100 microseconds
 
-    for (int i = 0; i < numberOfRuns; i++) {
+    do {
         CryptoPP::Timer timer;
-        long numberOfHashes = 0;
-        double elapsedTimeInSeconds;
-
         timer.StartTimer();
-        do {
-            hash.CalculateDigest(digest, inputData, inputDataSize);
-            numberOfHashes++;
-            elapsedTimeInSeconds = timer.ElapsedTimeAsDouble();
-        } while (elapsedTimeInSeconds < timeForOneRun);
 
-        timeForOneHash[i] = elapsedTimeInSeconds / numberOfHashes;
-    }
+        hash.CalculateDigest(digest, inputData, inputDataSize);
+
+        currentHashTime = timer.ElapsedTimeAsDouble();
+
+        // calculate average of more hashes if time for 1 hash is too short for accurate measurement
+        if (currentHashTime < minimumHashTime) {
+            long numberOfHashes = 0;
+            double moreHashesTime = 0;
+            while (moreHashesTime < minimumHashTime * 10) {
+                hash.CalculateDigest(digest, inputData, inputDataSize);
+                numberOfHashes++;
+                moreHashesTime = timer.ElapsedTimeAsDouble();
+            }
+            currentHashTime = moreHashesTime / numberOfHashes;
+            totalTime += moreHashesTime;
+        } else {
+            totalTime += currentHashTime;
+        }
+
+        if (currentHashTime < bestHashTime)
+            bestHashTime = currentHashTime;
+
+    } while (totalTime < runTimeInSeconds);
 
     /** DEBUG
     std::string hexDigest;
@@ -69,9 +82,7 @@ double bench(CryptoPP::HashTransformation& hash, CryptoPP::byte* inputData, size
     std::cout << "Digest: " << hexDigest << std::endl;
     **/
 
-    // return median of all runs
-    std::sort(std::begin(timeForOneHash), std::end(timeForOneHash));
-    return timeForOneHash[numberOfRuns / 2 - 1];
+    return bestHashTime;
 }
 
 int main() {
@@ -97,7 +108,7 @@ int main() {
     std::cout << std::endl;
 
     for (int i = 0; i < hashList.size(); i++) {
-        hashTime[i] = bench(*hashList[i], fileData, dataSizeInBytes, 2);
+        hashTime[i] = bench(*hashList[i], fileData, dataSizeInBytes, 5);
 
         std::cout << hashList[i]->AlgorithmName() << ":" << std::endl;
         std::cout << hashTime[i] * 1000 * 1000 << " µs per hash" << std::endl;
