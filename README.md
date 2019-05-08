@@ -12,3 +12,6 @@ https://www.cryptopp.com/wiki/Benchmarks
 https://www.cryptopp.com/wiki/Category:User_Guide  
 https://www.cryptopp.com/wiki/User_Guide:_Header_Files  
 https://www.cryptopp.com/wiki/User_Guide:_filters.h  
+
+### GNU Plot:
+https://stackoverflow.com/questions/327576/how-do-you-plot-bar-charts-in-gnuplot

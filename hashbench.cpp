@@ -1,4 +1,6 @@
 #include <iostream>
+#include <fstream>
+
 #include <cryptopp/cryptlib.h>
 #include <cryptopp/filters.h>
 #include <cryptopp/files.h>
@@ -85,6 +87,33 @@ double bench(CryptoPP::HashTransformation& hash, CryptoPP::byte* inputData, size
     return bestHashTime;
 }
 
+/**
+ * Generate data files for plotting with gnuplot
+ * @param hashList List of hash functions to plot
+ * @param inputFileName Filename of data to be hashed
+ */
+void generateGnuplotDataFile(std::vector<CryptoPP::HashTransformation *> &hashList, std::string &inputFileName) {
+    CryptoPP::byte* fileData;
+    size_t dataSizeInBytes = readFileIntoArray(inputFileName, fileData);
+
+    std::cout << dataSizeInBytes << " bytes (B)" << std::endl;
+
+    std::string helperString = inputFileName.substr(inputFileName.find_last_of("\\/"), std::string::npos);
+    helperString = helperString.substr(0, helperString.find_last_of('.')) + ".dat";
+    std::string outputFileName = "../gnuplot/datafiles" + helperString;
+    std::cout << "writing to " << outputFileName << std::endl;
+
+    std::ofstream outputFile;
+    outputFile.open(outputFileName);
+
+    for (int i = 0; i < hashList.size(); i++) {
+        double hashesPerSecond = 1 / bench(*hashList[i], fileData, dataSizeInBytes, 2);
+
+        outputFile << i << " \"" << hashList[i]->AlgorithmName() << "\" " << hashesPerSecond << std::endl;
+    }
+    outputFile.close();
+}
+
 int main() {
     std::vector<CryptoPP::HashTransformation*> hashList = {
         new CryptoPP::Weak::MD4(),
@@ -97,10 +126,14 @@ int main() {
         new CryptoPP::BLAKE2b(),
         new CryptoPP::BLAKE2s()
     };
-    double hashTime[hashList.size()];
 
     std::string filename = "../testfiles/short_text.txt";
-    
+    generateGnuplotDataFile(hashList, filename);
+
+
+    /**
+    double hashTime[hashList.size()];
+
     CryptoPP::byte* fileData;
     size_t dataSizeInBytes = readFileIntoArray(filename, fileData);
 
@@ -121,4 +154,5 @@ int main() {
     for (int i = 0; i < hashList.size(); i++) {
         delete hashList[i];
     }
+    **/
 }
