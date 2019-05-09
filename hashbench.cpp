@@ -142,9 +142,6 @@ void generateGnuplotDataFile(std::vector<CryptoPP::HashTransformation *> &hashLi
         oneFile << std::endl << std::endl;
     }
     oneFile.close();
-
-    // write bruteforce time file
-
 }
 
 int main() {
@@ -160,32 +157,9 @@ int main() {
         new CryptoPP::BLAKE2s()
     };
 
-    std::vector<std::string> fileNames = {"../testfiles/short_text.txt", "../testfiles/pdf.pdf"};
+    std::vector<std::string> fileNames;
+
+    fileNames.push_back("../testfiles/short_text.txt");
+
     generateGnuplotDataFile(hashList, fileNames);
-
-
-    /**
-    double hashTime[hashList.size()];
-
-    CryptoPP::byte* fileData;
-    size_t dataSizeInBytes = readFileIntoArray(filename, fileData);
-
-    std::cout << dataSizeInBytes << " bytes (B)" << std::endl;
-    std::cout << std::endl;
-
-    for (int i = 0; i < hashList.size(); i++) {
-        hashTime[i] = bench(*hashList[i], fileData, dataSizeInBytes, 5);
-
-        std::cout << hashList[i]->AlgorithmName() << ":" << std::endl;
-        std::cout << hashTime[i] * 1000 * 1000 << " µs per hash" << std::endl;
-        std::cout <<  1 / hashTime[i] << " hashes per s" << std::endl;
-        std::cout <<  ((double) dataSizeInBytes / 1024 / 1024) / hashTime[i] << " MiB/s" << std::endl;
-        std::cout << std::endl;
-    }
-
-    delete[] fileData;
-    for (int i = 0; i < hashList.size(); i++) {
-        delete hashList[i];
-    }
-    **/
 }

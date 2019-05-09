@@ -20,7 +20,7 @@ set style line 5 \
     linetype 1 linewidth 2 \
     pointtype 5 pointsize 1.5
 set style line 6 \
-    linecolor rgb '#aa3412' \
+    linecolor rgb '#cc0099' \
     linetype 1 linewidth 2 \
     pointtype 6 pointsize 1.5
 set style line 7 \
@@ -32,10 +32,14 @@ set style line 8 \
     linetype 1 linewidth 2 \
     pointtype 8 pointsize 1.5
 set style line 9 \
-    linecolor rgb '#eee432' \
+    linecolor rgb '#009933' \
     linetype 1 linewidth 2 \
     pointtype 9 pointsize 1.5
 
+set logscale x 2
+set logscale y 10
+
+set xrange [4:5000]
 
 plot 'datafiles/onefile.dat' index 0 title 'MD4' with linespoints linestyle 1, \
      ''                      index 1 title 'MD5' with linespoints linestyle 2, \
