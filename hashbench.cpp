@@ -13,6 +13,8 @@
 #include <cryptopp/sha3.h>
 #include <cryptopp/blake2.h>
 
+const double cpuFreq = 2.7 * 1000 * 1000 * 1000;
+
 /**
  * Read file into byte array
  * @param filename
@@ -93,7 +95,7 @@ double bench(CryptoPP::HashTransformation& hash, CryptoPP::byte* inputData, size
  * @param inputFileName Filename of data to be hashed
  */
 void generateGnuplotDataFile(std::vector<CryptoPP::HashTransformation *> &hashList, std::vector<std::string> inputFileNames) {
-    double hashesPerSecond[inputFileNames.size()][hashList.size()];
+    double timeForOneHash[inputFileNames.size()][hashList.size()];
     size_t dataSizeInBytes[inputFileNames.size()];
 
     for (int i = 0; i < inputFileNames.size(); i++) {
@@ -104,7 +106,7 @@ void generateGnuplotDataFile(std::vector<CryptoPP::HashTransformation *> &hashLi
 
         for (int j = 0; j < hashList.size(); j++) {
             double hashTimeInSeconds = bench(*hashList[j], fileData, dataSizeInBytes[i], 1);
-            hashesPerSecond[i][j] = 1 / hashTimeInSeconds;
+            timeForOneHash[i][j] = hashTimeInSeconds;
         }
         delete[] fileData;
     }
@@ -122,7 +124,7 @@ void generateGnuplotDataFile(std::vector<CryptoPP::HashTransformation *> &hashLi
         hpsFile << "# name hashesPerSecond" << std::endl;
 
         for (int j = 0; j < hashList.size(); j++) {
-            hpsFile << j << " \"" << hashList[j]->AlgorithmName() << "\" " << hashesPerSecond[i][j] << std::endl;
+            hpsFile << j << " \"" << hashList[j]->AlgorithmName() << "\" " << 1 / timeForOneHash[i][j] << std::endl;
         }
         hpsFile.close();
     }
@@ -137,11 +139,30 @@ void generateGnuplotDataFile(std::vector<CryptoPP::HashTransformation *> &hashLi
         oneFile << "# " << hashList[i]->AlgorithmName() << " (index " << i << ")" << std::endl;
         oneFile << "# bytes hashesPerSecond" << std::endl;
         for (int j = 0; j < inputFileNames.size(); j++) {
-            oneFile << dataSizeInBytes[j] << " " << hashesPerSecond[j][i] << std::endl;
+            oneFile << dataSizeInBytes[j] << " " << 1 / timeForOneHash[j][i] << std::endl;
         }
         oneFile << std::endl << std::endl;
     }
     oneFile.close();
+
+    // cycles per byte
+    for (int i = 0; i < inputFileNames.size(); i++) {
+        std::string cpbFileName;
+        std::string helperString = inputFileNames[i].substr(inputFileNames[i].find_last_of("\\/"), std::string::npos);
+        helperString = helperString.substr(0, helperString.find_last_of('.'));
+        cpbFileName = "../gnuplot/datafiles" + helperString + "_cpb.dat";
+        std::cout << "writing to " << cpbFileName << std::endl;
+
+        std::ofstream cpbFile;
+        cpbFile.open(cpbFileName);
+        cpbFile << "# name cyclesPerByte" << std::endl;
+
+        for (int j = 0; j < hashList.size(); j++) {
+            cpbFile << j << " \"" << hashList[j]->AlgorithmName() << "\" " << timeForOneHash[i][j] * cpuFreq / dataSizeInBytes[i] << std::endl;
+        }
+        cpbFile.close();
+    }
+
 }
 
 int main() {
