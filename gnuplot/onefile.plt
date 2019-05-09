@@ -8,5 +8,5 @@ set style line 2 \
     linetype 1 linewidth 2 \
     pointtype 5 pointsize 1.5
 
-plot 'datafiles/mps.dat' index 0 with linespoints linestyle 1, \
+plot 'datafiles/onefile.dat' index 0 with linespoints linestyle 1, \
      ''                   index 1 with linespoints linestyle 2
