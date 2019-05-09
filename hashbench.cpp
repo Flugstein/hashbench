@@ -92,26 +92,56 @@ double bench(CryptoPP::HashTransformation& hash, CryptoPP::byte* inputData, size
  * @param hashList List of hash functions to plot
  * @param inputFileName Filename of data to be hashed
  */
-void generateGnuplotDataFile(std::vector<CryptoPP::HashTransformation *> &hashList, std::string &inputFileName) {
-    CryptoPP::byte* fileData;
-    size_t dataSizeInBytes = readFileIntoArray(inputFileName, fileData);
+void generateGnuplotDataFile(std::vector<CryptoPP::HashTransformation *> &hashList, std::vector<std::string> inputFileNames) {
+    double megaBytePerSecond[inputFileNames.size()][hashList.size()];
+    int dataSize[inputFileNames.size()];
 
-    std::cout << dataSizeInBytes << " bytes (B)" << std::endl;
+    for (int i = 0; i < inputFileNames.size(); i++) {
+        std::string inputFileName = inputFileNames[i];
 
-    std::string helperString = inputFileName.substr(inputFileName.find_last_of("\\/"), std::string::npos);
-    helperString = helperString.substr(0, helperString.find_last_of('.')) + ".dat";
-    std::string outputFileName = "../gnuplot/datafiles" + helperString;
-    std::cout << "writing to " << outputFileName << std::endl;
+        CryptoPP::byte *fileData;
+        size_t dataSizeInBytes = readFileIntoArray(inputFileName, fileData);
+        dataSize[i] = dataSizeInBytes;
 
-    std::ofstream outputFile;
-    outputFile.open(outputFileName);
+        std::cout << "reading " << dataSizeInBytes << " bytes from " << inputFileName << std::endl;
+
+        std::string hpsFileName;
+        std::string helperString = inputFileName.substr(inputFileName.find_last_of("\\/"), std::string::npos);
+        helperString = helperString.substr(0, helperString.find_last_of('.')) + ".dat";
+        hpsFileName = "../gnuplot/datafiles" + helperString;
+        std::cout << "writing to " << hpsFileName << std::endl;
+
+        std::ofstream hpsFile;
+        hpsFile.open(hpsFileName);
+        hpsFile << "# name hashesPerSecond" << std::endl;
+
+        for (int j = 0; j < hashList.size(); j++) {
+            double hashTimeInSeconds = bench(*hashList[j], fileData, dataSizeInBytes, 1);
+            double hashesPerSecond = 1 / hashTimeInSeconds;
+            megaBytePerSecond[i][j] = ((double) dataSizeInBytes / 1024 / 1024) / hashTimeInSeconds;
+
+            hpsFile << j << " \"" << hashList[j]->AlgorithmName() << "\" " << hashesPerSecond << std::endl;
+        }
+        hpsFile.close();
+        delete[] fileData;
+    }
+
+    // write mps file
+    std::ofstream mpsFile;
+    std::string mpsFileName = "../gnuplot/datafiles/mps.dat";
+    mpsFile.open(mpsFileName);
+    std::cout << "writing to " << mpsFileName << std::endl;
 
     for (int i = 0; i < hashList.size(); i++) {
-        double hashesPerSecond = 1 / bench(*hashList[i], fileData, dataSizeInBytes, 2);
-
-        outputFile << i << " \"" << hashList[i]->AlgorithmName() << "\" " << hashesPerSecond << std::endl;
+        mpsFile << "# " << hashList[i]->AlgorithmName() << " (index " << i << ")" << std::endl;
+        mpsFile << "# bytes megaBytePerSecond" << std::endl;
+        for (int j = 0; j < inputFileNames.size(); j++) {
+            mpsFile << dataSize[j] << " " << megaBytePerSecond[j][i] << std::endl;
+        }
+        mpsFile << std::endl << std::endl;
     }
-    outputFile.close();
+
+    mpsFile.close();
 }
 
 int main() {
@@ -127,8 +157,8 @@ int main() {
         new CryptoPP::BLAKE2s()
     };
 
-    std::string filename = "../testfiles/short_text.txt";
-    generateGnuplotDataFile(hashList, filename);
+    std::vector<std::string> fileNames = {"../testfiles/short_text.txt", "../testfiles/pdf.pdf"};
+    generateGnuplotDataFile(hashList, fileNames);
 
 
     /**
