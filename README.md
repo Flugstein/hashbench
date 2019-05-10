@@ -5,6 +5,7 @@ Benchmarking of different cryptographic hash functions using the [Crypto++](http
 - Change CPU powersave mode to performance with `governer.sh`  
 - Optionally generate Files with `generateFiles.sh`
 - Modify `main()` in `hashbench.cpp` to include the Hashes and Filenames you need
+- Change `cpuFreq` in `hashbench.cpp` to your CPU frequency for accurate cpb calculation
 - Run hashbench
 - Modify `.plt` files under `gnuplot/` and change input and output filenames
 - Run `gnuplot <plotfilename>.plt`

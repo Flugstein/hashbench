@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 
 #include <cryptopp/cryptlib.h>
@@ -133,7 +134,7 @@ void generateGnuplotDataFile(std::vector<CryptoPP::HashTransformation *> &hashLi
         std::string hpsFileName;
         std::string helperString = inputFileNames[i].substr(inputFileNames[i].find_last_of("\\/"), std::string::npos);
         helperString = helperString.substr(0, helperString.find_last_of('.'));
-        hpsFileName = "../gnuplot/datafiles" + helperString + "._hps.dat";
+        hpsFileName = "../gnuplot/datafiles" + helperString + "_hps.dat";
         std::cout << "writing to " << hpsFileName << std::endl;
 
         std::ofstream hpsFile;
@@ -159,7 +160,9 @@ void generateGnuplotDataFile(std::vector<CryptoPP::HashTransformation *> &hashLi
         cpbFile << "# name cyclesPerByte color" << std::endl;
 
         for (int j = 0; j < hashList.size(); j++) {
-            cpbFile << "\"" << hashList[j]->AlgorithmName() << "\" " << timeForOneHash[i][j] * cpuFreq / dataSizeInBytes[i] << " " << colorsPerHash[j] << std::endl;
+            double cpb = timeForOneHash[i][j] * cpuFreq / dataSizeInBytes[i];
+            cpbFile << std::fixed << std::setprecision(2);
+            cpbFile << "\"" << hashList[j]->AlgorithmName() << "\" " << cpb << " " << colorsPerHash[j] << std::endl;
         }
         cpbFile.close();
     }

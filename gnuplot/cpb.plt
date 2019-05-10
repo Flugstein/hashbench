@@ -11,4 +11,4 @@ set boxwidth 0.5
 set grid ytics linestyle 0
 set style fill solid
 plot "datafiles/cpb_final.dat" using 0:2:3:xtic(1) with boxes lc rgb var ,\
-     "datafiles/cpb_final.dat" using 0:($2+0.5):4 with labels
+     "datafiles/cpb_final.dat" using 0:($2+0.5):2 with labels
