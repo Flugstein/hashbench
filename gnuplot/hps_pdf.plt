@@ -1,3 +1,6 @@
+set terminal pngcairo size 1024,720
+set output 'images/hps_pdf_final.png'
+
 set title "Hashes per Second for 1MB PDF File"
 set nokey
 set ylabel "Hashes per Second"

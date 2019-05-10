@@ -1,3 +1,6 @@
+set terminal pngcairo size 1024,720
+set output 'images/onefile_small_final.png'
+
 set style line 1 \
     linecolor rgb '#3333cc' \
     linetype 1 linewidth 2 \

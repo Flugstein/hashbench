@@ -1,3 +1,6 @@
+set terminal pngcairo size 1024,720
+set output 'images/hps_password_final.png'
+
 set title "Hashes per Second for 16 Byte Password"
 set nokey
 set ylabel "Hashes per Second"

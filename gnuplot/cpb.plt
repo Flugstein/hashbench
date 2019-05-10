@@ -1,3 +1,6 @@
+set terminal pngcairo size 1024,720
+set output 'images/cpb_final.png'
+
 set title "Cycles per Byte"
 set nokey
 set yrange [0:23]
