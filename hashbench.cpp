@@ -93,8 +93,9 @@ double bench(CryptoPP::HashTransformation& hash, CryptoPP::byte* inputData, size
  * Generate data files for plotting with gnuplot
  * @param hashList List of hash functions to plot
  * @param inputFileName Filename of data to be hashed
+ * @param colorsPerHash Color for each hash function (must be same size as hashList)
  */
-void generateGnuplotDataFile(std::vector<CryptoPP::HashTransformation *> &hashList, std::vector<std::string> inputFileNames) {
+void generateGnuplotDataFile(std::vector<CryptoPP::HashTransformation *> &hashList, std::vector<std::string> inputFileNames, std::vector<std::string> colorsPerHash) {
     double timeForOneHash[inputFileNames.size()][hashList.size()];
     size_t dataSizeInBytes[inputFileNames.size()];
 
@@ -111,25 +112,7 @@ void generateGnuplotDataFile(std::vector<CryptoPP::HashTransformation *> &hashLi
         delete[] fileData;
     }
 
-    // write bar chart files
-    for (int i = 0; i < inputFileNames.size(); i++) {
-        std::string hpsFileName;
-        std::string helperString = inputFileNames[i].substr(inputFileNames[i].find_last_of("\\/"), std::string::npos);
-        helperString = helperString.substr(0, helperString.find_last_of('.'));
-        hpsFileName = "../gnuplot/datafiles" + helperString + ".dat";
-        std::cout << "writing to " << hpsFileName << std::endl;
-
-        std::ofstream hpsFile;
-        hpsFile.open(hpsFileName);
-        hpsFile << "# name hashesPerSecond" << std::endl;
-
-        for (int j = 0; j < hashList.size(); j++) {
-            hpsFile << j << " \"" << hashList[j]->AlgorithmName() << "\" " << 1 / timeForOneHash[i][j] << std::endl;
-        }
-        hpsFile.close();
-    }
-
-    // write all in one file
+    // write hashes per second, all in one file
     std::ofstream oneFile;
     std::string oneFileName = "../gnuplot/datafiles/onefile.dat";
     oneFile.open(oneFileName);
@@ -145,7 +128,25 @@ void generateGnuplotDataFile(std::vector<CryptoPP::HashTransformation *> &hashLi
     }
     oneFile.close();
 
-    // cycles per byte
+    // write hashes per second, bar chart files
+    for (int i = 0; i < inputFileNames.size(); i++) {
+        std::string hpsFileName;
+        std::string helperString = inputFileNames[i].substr(inputFileNames[i].find_last_of("\\/"), std::string::npos);
+        helperString = helperString.substr(0, helperString.find_last_of('.'));
+        hpsFileName = "../gnuplot/datafiles" + helperString + "._hps.dat";
+        std::cout << "writing to " << hpsFileName << std::endl;
+
+        std::ofstream hpsFile;
+        hpsFile.open(hpsFileName);
+        hpsFile << "# name hashesPerSecond color" << std::endl;
+
+        for (int j = 0; j < hashList.size(); j++) {
+            hpsFile << "\"" << hashList[j]->AlgorithmName() << "\" " << 1 / timeForOneHash[i][j] << " " << colorsPerHash[j] << std::endl;
+        }
+        hpsFile.close();
+    }
+
+    // write cycles per byte, bar chart files
     for (int i = 0; i < inputFileNames.size(); i++) {
         std::string cpbFileName;
         std::string helperString = inputFileNames[i].substr(inputFileNames[i].find_last_of("\\/"), std::string::npos);
@@ -155,10 +156,10 @@ void generateGnuplotDataFile(std::vector<CryptoPP::HashTransformation *> &hashLi
 
         std::ofstream cpbFile;
         cpbFile.open(cpbFileName);
-        cpbFile << "# name cyclesPerByte" << std::endl;
+        cpbFile << "# name cyclesPerByte color" << std::endl;
 
         for (int j = 0; j < hashList.size(); j++) {
-            cpbFile << j << " \"" << hashList[j]->AlgorithmName() << "\" " << timeForOneHash[i][j] * cpuFreq / dataSizeInBytes[i] << std::endl;
+            cpbFile << "\"" << hashList[j]->AlgorithmName() << "\" " << timeForOneHash[i][j] * cpuFreq / dataSizeInBytes[i] << " " << colorsPerHash[j] << std::endl;
         }
         cpbFile.close();
     }
@@ -178,9 +179,21 @@ int main() {
         new CryptoPP::BLAKE2s()
     };
 
+    std::vector<std::string> colorsPerHash = {
+        "0x3333cc",
+        "0xf30323",
+        "0xffe453",
+        "0x00cc00",
+        "0xff8342",
+        "0xcc0099",
+        "0xcc0000",
+        "0x33bccc",
+        "0x009933"
+    };
+
     std::vector<std::string> fileNames;
 
     fileNames.push_back("../testfiles/short_text.txt");
 
-    generateGnuplotDataFile(hashList, fileNames);
+    generateGnuplotDataFile(hashList, fileNames, colorsPerHash);
 }

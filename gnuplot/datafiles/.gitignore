@@ -1,3 +1,8 @@
 *
 */
 !.gitignore
+!cpb_final.dat
+!onefile_final.dat
+!pdf_final.dat
+!video_final.dat
+!password_final.dat
