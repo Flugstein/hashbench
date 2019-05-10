@@ -1,4 +1,4 @@
-set terminal pngcairo size 1024,720
+set terminal pngcairo size 1024,720 font ",16"
 set output 'images/hps_video_final.png'
 
 set title "Hashes per Second for 2GB Video File"

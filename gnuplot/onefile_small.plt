@@ -1,4 +1,5 @@
-set terminal pngcairo size 1024,720
+set terminal pngcairo size 1024,720 font ",16"
+set key font ",12"
 set output 'images/onefile_small_final.png'
 
 set style line 1 \
