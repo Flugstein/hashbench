@@ -1,9 +1,9 @@
 # name cyclesPerByte color
-"MD4" 3.08 0x3333cc
+"AES Davies-Meyer" 2.95 0x3333cc
 "MD5" 5.18 0xf30323
 "SHA-1" 6.07 0xffe453
 "SHA-256" 11.23 0x00cc00
-"SHA-512" 9.15 0xff8342
+"SHA-512" 9.11 0xff8342
 "SHA3-256" 11.17 0xcc0099
 "SHA3-512" 20.89 0xcc0000
 "BLAKE2b-512" 4.13 0x33bccc

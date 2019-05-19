@@ -51,7 +51,7 @@ set xtics 4
 set format x "2^{%L}"
 
 
-plot 'datafiles/onefile_final.dat' index 0 title 'MD4' with linespoints linestyle 1, \
+plot 'datafiles/onefile_final.dat' index 0 title 'AES Davies-Meyer' with linespoints linestyle 1, \
      ''                      index 1 title 'MD5' with linespoints linestyle 2, \
      ''                      index 2 title 'SHA-1' with linespoints linestyle 3, \
      ''                      index 3 title 'SHA-256' with linespoints linestyle 4, \

@@ -17,7 +17,7 @@
 #include <cryptopp/osrng.h>
 
 const double cpuFreq = 2.7 * 1000 * 1000 * 1000;
-const unsigned int max_aes_file_size_bytes = 1024 * 1024;
+const unsigned int max_aes_file_size_bytes = 1024 * 1024 * 2;
 
 /** Hack to use AES as hash function **/
 class AES_HASH: public CryptoPP::HashTransformation {
