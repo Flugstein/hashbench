@@ -8,13 +8,51 @@
 #include <cryptopp/hrtimer.h>
 #include <cryptopp/hex.h>
 #define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
-#include <cryptopp/md4.h>
+#include <cryptopp/aes.h>
 #include <cryptopp/md5.h>
 #include <cryptopp/sha.h>
 #include <cryptopp/sha3.h>
 #include <cryptopp/blake2.h>
+#include <cryptopp/modes.h>
+#include <cryptopp/osrng.h>
 
 const double cpuFreq = 2.7 * 1000 * 1000 * 1000;
+const unsigned int max_aes_file_size_bytes = 1024 * 1024;
+
+/** Hack to use AES as hash function **/
+class AES_HASH: public CryptoPP::HashTransformation {
+private:
+    CryptoPP::CFB_Mode<CryptoPP::AES>::Encryption* encryptor;
+
+public:
+    AES_HASH() {
+        CryptoPP::AutoSeededRandomPool rnd;
+
+        CryptoPP::SecByteBlock key(0x00, CryptoPP::AES::DEFAULT_KEYLENGTH);
+        rnd.GenerateBlock(key, key.size());
+
+        CryptoPP::SecByteBlock iv(CryptoPP::AES::BLOCKSIZE);
+        rnd.GenerateBlock(iv, iv.size());
+
+        encryptor = new CryptoPP::CFB_Mode<CryptoPP::AES>::Encryption(key, key.size(), iv);
+    }
+
+    std::string AlgorithmName() const {
+        return "AES Davies-Meyer";
+    }
+
+    unsigned int DigestSize() const {
+        return max_aes_file_size_bytes;
+    }
+
+    void CalculateDigest(CryptoPP::byte *digest, const CryptoPP::byte *input, size_t length) {
+        encryptor->ProcessData(digest, input, length);
+    }
+
+    void Update(const CryptoPP::byte *input, size_t length) {}
+
+    void TruncatedFinal(CryptoPP::byte *digest, size_t digestSize) {}
+};
 
 /**
  * Read file into byte array
@@ -171,7 +209,7 @@ void generateGnuplotDataFile(std::vector<CryptoPP::HashTransformation *> &hashLi
 
 int main() {
     std::vector<CryptoPP::HashTransformation*> hashList = {
-        new CryptoPP::Weak::MD4(),
+        new AES_HASH(),
         new CryptoPP::Weak::MD5(),
         new CryptoPP::SHA1(),
         new CryptoPP::SHA256(),
