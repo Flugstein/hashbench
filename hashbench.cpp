@@ -279,5 +279,11 @@ int main() {
 
     fileNames.push_back("../testfiles/short_text.txt");
 
+    /**
+    for (int i = 3; i <= 20; ++i) {
+        fileNames.push_back("../testfiles/2_" + std::to_string(i));
+    }
+    **/
+
     generateGnuplotDataFile(hashList, fileNames, colorsPerHash);
 }
