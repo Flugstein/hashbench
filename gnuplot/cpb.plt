@@ -1,7 +1,6 @@
 set terminal pngcairo size 1024,720 font ",16"
 set output 'images/cpb_final.png'
 
-set title "Cycles per Byte"
 set nokey
 set yrange [0:33]
 set ylabel "Cycles per Byte"
