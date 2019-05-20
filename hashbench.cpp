@@ -9,32 +9,45 @@
 #include <cryptopp/hex.h>
 #define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
 #include <cryptopp/aes.h>
+#include <cryptopp/osrng.h>
 #include <cryptopp/md5.h>
 #include <cryptopp/sha.h>
 #include <cryptopp/sha3.h>
 #include <cryptopp/blake2.h>
-#include <cryptopp/modes.h>
-#include <cryptopp/osrng.h>
 
 const double cpuFreq = 2.7 * 1000 * 1000 * 1000;
-const unsigned int max_aes_file_size_bytes = 1024 * 1024 * 2;
 
-/** Hack to use AES as hash function **/
+/**
+ * Hack to use AES as hash function
+ * Using Tandem Davies-Meyer
+ */
 class AES_HASH: public CryptoPP::HashTransformation {
 private:
-    CryptoPP::CFB_Mode<CryptoPP::AES>::Encryption* encryptor;
+    CryptoPP::AES::Encryption* g_m_encryptor;
+    CryptoPP::AES::Encryption* m_w_encryptor;
+
+    CryptoPP::byte h_g_m_w_block[4 * 16];
+
+    CryptoPP::byte* h_block =   h_g_m_w_block + 0 * 16;
+    CryptoPP::byte* h_g_block = h_g_m_w_block + 0 * 16;
+    CryptoPP::byte* g_block =   h_g_m_w_block + 1 * 16;
+    CryptoPP::byte* g_m_block = h_g_m_w_block + 1 * 16;
+    CryptoPP::byte* m_block =   h_g_m_w_block + 2 * 16;
+    CryptoPP::byte* m_w_block = h_g_m_w_block + 2 * 16;
+    CryptoPP::byte* w_block =   h_g_m_w_block + 3 * 16;
+
+    CryptoPP::byte g_before_block[16];
 
 public:
     AES_HASH() {
         CryptoPP::AutoSeededRandomPool rnd;
 
-        CryptoPP::SecByteBlock key(0x00, CryptoPP::AES::DEFAULT_KEYLENGTH);
-        rnd.GenerateBlock(key, key.size());
+        // generate initialization vectors
+        rnd.GenerateBlock(g_block, 16);
+        rnd.GenerateBlock(h_block, 16);
 
-        CryptoPP::SecByteBlock iv(CryptoPP::AES::BLOCKSIZE);
-        rnd.GenerateBlock(iv, iv.size());
-
-        encryptor = new CryptoPP::CFB_Mode<CryptoPP::AES>::Encryption(key, key.size(), iv);
+        g_m_encryptor = new CryptoPP::AES::Encryption(g_m_block, 32);
+        m_w_encryptor = new CryptoPP::AES::Encryption(m_w_block, 32);
     }
 
     std::string AlgorithmName() const {
@@ -42,11 +55,41 @@ public:
     }
 
     unsigned int DigestSize() const {
-        return max_aes_file_size_bytes;
+        return 32;
     }
 
     void CalculateDigest(CryptoPP::byte *digest, const CryptoPP::byte *input, size_t length) {
-        encryptor->ProcessData(digest, input, length);
+        for (int i = 0; i < length; i += 16) {
+
+            // copy 16 bytes from input into m_block
+            if (length - i < 16) {
+                for (int j = 0; j < length - i; j++)
+                    m_block[j] = input[i + j];
+                for (int j = length - i; j < 16; j++)
+                    m_block[j] = 0; // pad with 0
+            } else {
+                for (int j = 0; j < 16; j++)
+                    m_block[j] = input[i + j];
+            }
+
+            // W_i = E_G_i-1,M_i(H_i-1)
+            g_m_encryptor->ProcessBlock(h_block, w_block);
+
+            // G_i = G_i-1 XOR E_M_i,W_i(G_i-1)
+            for (int j = 0; j < 16; j++)
+                g_before_block[j] = g_block[j];
+            m_w_encryptor->ProcessAndXorBlock(g_before_block, g_before_block, g_block);
+
+            // H_i = W_i XOR H_i-1
+            for (int j = 0; j < 16; j++) {
+                h_block[j] = w_block[j] ^ h_block[j];
+            }
+        }
+
+        // H_i and G_i make the 256bit hash value
+        for (int i = 0; i < 32; i++) {
+            digest[i] = h_g_block[i];
+        }
     }
 
     void Update(const CryptoPP::byte *input, size_t length) {}
